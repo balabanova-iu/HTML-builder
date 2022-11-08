@@ -1,23 +1,20 @@
 const path = require("path");
 const { resolve } = require("path");
-const { readdir, opendir } = require("fs").promises;
+const { readdir, stat } = require("fs").promises;
 
-async function getFiles(dir) {
-  const dirents = await readdir(dir, { withFileTypes: true });
+const folder = path.join(__dirname, "secret-folder");
 
-  const files = await Promise.all(
-    dirents.map((dirent) => {
-      const res = resolve(dir, dirent.name);
+const getListFiles = async function () {
+  const dir = await readdir(folder, { withFileTypes: true });
+  dir.map(async (file) => {
+    if (file.isFile()) {
+      const stats = await stat(path.join(folder, file.name));
+      const fileName = file.name.split(".")[0];
+      const fileExtname = path.extname(file.name).split(".")[1];
+      const fileSize = `${(stats.size / 1000).toFixed(3)}`;
+      console.log(`${fileName}- ${fileExtname} - ${fileSize}kb`);
+    }
+  });
+};
 
-      return dirent.isDirectory() ? getFiles(res) : res;
-    })
-  );
-
-  return Array.prototype.concat(...files);
-}
-
-getFiles(__dirname)
-  .then((files) => console.log(files.slice(2)))
-  .catch((err) => console.error(err));
-
-// '03-files-in-folder/secret-folder'
+getListFiles();
